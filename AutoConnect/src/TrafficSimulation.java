@@ -8,22 +8,31 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class TrafficSimulation {
+    private static final String rawTrafficData = "trafficData/kathmanduTraffic.txt";
 
-    ArrayList<Vehicle> vehicleArrayList = new ArrayList();
+    private static ArrayList<Vehicle> vehicleArrayList = new ArrayList();
 
 
-    /**
-     *
-     */
+    public static void main(String[] args){
+
+        try{
+            ArrayList<String> createdVehicledData = readTrafficData(rawTrafficData);
+            createVehicles(createdVehicledData);
+        }catch(IOException e){
+            System.out.println(e.getMessage());
+        }
+
+    }
+
     //This method takes in a CSV file containing the raw traffic simulation data for n vehicles,
     //and creates n smaller CSV files per vehicle. Returns file path of created CSV files.
-    private ArrayList<String> readTrafficData(String pathToCsv) throws IOException{
+    private static ArrayList<String> readTrafficData(String pathToCsv) throws IOException{
         ArrayList<String> vehicleData = new ArrayList<>();
 
         String row;
 
         BufferedReader csvReader = new BufferedReader((new FileReader(pathToCsv)));
-        csvReader.skip(1);
+        csvReader.readLine(); //skip first line
 
         FileWriter writer = null;
 
@@ -33,13 +42,13 @@ public class TrafficSimulation {
 
             //if we encounter a car id, stop writing to current file & write to new file.
             //note, this skips the current line
-            if (Character.isDigit(data[0].charAt(0))){
+            if (!data[0].isEmpty()){
                 if(writer!=null){
                     writer.flush();
                     writer.close();
                 }
 
-                String filePath = "vehicleData" + Integer.toString(++counter);
+                String filePath = "trafficData/vehicleData" + Integer.toString(++counter) + ".txt";
                 Path vehicleFilePath = Paths.get(filePath);
                 Files.createFile(vehicleFilePath);
                 vehicleData.add(filePath);
@@ -55,7 +64,7 @@ public class TrafficSimulation {
         return vehicleData;
     }
 
-    private void createVehicles(ArrayList<String> vehicleCSVs){
+    private static void createVehicles(ArrayList<String> vehicleCSVs){
         for(String csvFile: vehicleCSVs){
             Vehicle vehicle = new Vehicle(csvFile);
             vehicleArrayList.add(vehicle);

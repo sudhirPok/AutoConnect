@@ -52,7 +52,7 @@ public class Vehicle {
     public void updatePositionToServer(String currentTime){
         //we need to be careful -- given current time may JUST be off 0.1 s off our known times
         if(timestamp.containsKey(Float.parseFloat(currentTime))){
-            //send position to server
+            //insert here
         }else{
             //need a way to handle this
         }
