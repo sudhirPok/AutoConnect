@@ -6,30 +6,32 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TrafficSimulation {
     private static final String rawTrafficData = "trafficData/kathmanduTraffic.txt";
     private static final int numVehicles = 10;
 
     private static ArrayList<Vehicle> vehicleArrayList = new ArrayList();
-    /*
-    private static ArrayList<String> testingVehiclePath = new ArrayList(){
-        "trafficData/vehicleData1.txt","trafficData/vehicleData2.txt","trafficData/vehicleData3.txt","trafficData/vehicleData4.txt"
-                "trafficData/vehicleData5.txt", "trafficData/vehicleData6.txt", "trafficData/vehicleData7.txt", "trafficData/vehicleData8.txt"
-                "trafficData/vehicleData9.txt","trafficData/vehicleData10.txt"
-    };*/
 
+    private static ArrayList<String> testingVehiclePath = new ArrayList<String>(
+            Arrays.asList("trafficData/vehicleData1.txt","trafficData/vehicleData2.txt","trafficData/vehicleData3.txt","trafficData/vehicleData4.txt",
+            "trafficData/vehicleData5.txt", "trafficData/vehicleData6.txt", "trafficData/vehicleData7.txt", "trafficData/vehicleData8.txt",
+            "trafficData/vehicleData9.txt","trafficData/vehicleData10.txt"));
 
     public static void main(String[] args){
 
         try{
-            ArrayList<String> createdVehicleData = readTrafficData(rawTrafficData);
+            //ArrayList<String> createdVehicleData = readTrafficData(rawTrafficData);
+            ArrayList<String> createdVehicleData = testingVehiclePath;
             createVehicles(createdVehicleData);
         }catch(IOException e){
             System.out.println(e.getMessage());
         }catch(ParseVehicleDataException e){
             System.out.println(e.getMessage());
         }
+
+        System.out.println("Yeah, works so far!");
 
     }
 
@@ -73,7 +75,7 @@ public class TrafficSimulation {
         return vehicleData;
     }
 
-    private static void createVehicles(ArrayList<String> vehicleCSVs) throws ParseVehicleDataException{
+    private static void createVehicles(ArrayList<String> vehicleCSVs) throws IOException, ParseVehicleDataException{
         for(String csvFile: vehicleCSVs){
             Vehicle vehicle = new Vehicle(csvFile);
             vehicleArrayList.add(vehicle);

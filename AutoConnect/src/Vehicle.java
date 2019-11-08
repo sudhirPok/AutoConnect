@@ -27,23 +27,23 @@ public class Vehicle {
     }
 
 
-    public Vehicle(String file){
+    public Vehicle(String file) throws IOException, ParseVehicleDataException{
         ID = UUID.randomUUID();
         timestamp = new HashMap<>();
+        parsePointData(file);
     }
 
     private void parsePointData(String file) throws IOException, ParseVehicleDataException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file));
         String row = "";
         while ((row = csvReader.readLine()) != null) {
-            String[] data = row.split(",", 4);
-            if(data.length!=4){
-                throw new ParseVehicleDataException("Raw vehicle data should contain empty space" +
-                        "and time, latitude, longitude");
+            String[] data = row.split(",");
+            if(data.length!=5){
+                throw new ParseVehicleDataException(String.format("Vehicle file %s was not parsed correctly", file));
             }
 
-            Coordinate point = new Coordinate(Double.parseDouble(data[2]), Double.parseDouble(data[3]));
-            timestamp.put(Float.parseFloat(data[1]), point);
+            Coordinate point = new Coordinate(Double.parseDouble(data[3]), Double.parseDouble(data[4]));
+            timestamp.put(Float.parseFloat(data[2]), point);
         }
         csvReader.close();
 
