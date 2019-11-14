@@ -28,6 +28,8 @@ public class TrafficSimulation {
     }
 
     private static void initializeTraffic(){
+
+        //create vehicles
         try{
             //ArrayList<String> createdVehicleData = readTrafficData(rawTrafficData);
             ArrayList<String> createdVehicleData = testingVehiclePath;
