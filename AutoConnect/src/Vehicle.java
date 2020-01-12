@@ -26,11 +26,11 @@ public class Vehicle {
             longitude = y;
         }
 
-        public double getLatitute(){
+        public double getLatitude(){
             return latitude;
         }
 
-        public double getLongitute(){
+        public double getLongitude(){
             return longitude;
         }
 
@@ -67,18 +67,8 @@ public class Vehicle {
         inception = getStartingTime();
     }
 
-    private Coordinate getStartingCoordinate(){
-        Collection<Coordinate> coordinates = futureRoute.values();
-        return coordinates.iterator().next();
-    }
-
-    private float getStartingTime(){
-        Collection<Float> times = futureRoute.keySet();
-        return times.iterator().next();
-    }
-
     //this function gaurantees vehicle has proper time-stamped coordinate data
-    private Coordinate parsePointData(String file) throws IOException, ParseVehicleDataException{
+    /*private Coordinate parsePointData(String file) throws IOException, ParseVehicleDataException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file));
         String row = "";
         Coordinate lastPoint = null;
@@ -95,21 +85,30 @@ public class Vehicle {
         }
         csvReader.close();
         return lastPoint;
+    }*/
+
+    private Coordinate getStartingCoordinate(){
+        Collection<Coordinate> coordinates = futureRoute.values();
+        return coordinates.iterator().next();
     }
+
+    private float getStartingTime(){
+        Collection<Float> times = futureRoute.keySet();
+        return times.iterator().next();
+    }
+
+
 
     public void initializeConnection(){
         String VIN = this.ID.toString();
         String GPX = generateGPX();
-        String PositionX = Double.toString(getStartingCoordinate().getLatitute());
-        String PositionY = Double.toString(getStartingCoordinate().getLongitute());
-        String DestinationX = Double.toString(this.destination.getLatitute());
-        String DestinationY = Double.toString(this.destination.getLongitute());
+        String PositionX = Double.toString(getStartingCoordinate().getLatitude());
+        String PositionY = Double.toString(getStartingCoordinate().getLongitude());
+        String DestinationX = Double.toString(this.destination.getLatitude());
+        String DestinationY = Double.toString(this.destination.getLongitude());
     }
 
-    /**
-     * Calculates speed of vehicle by looking ahead into its project path by @VEHICLES_IN_SPEED amount
-     * @return
-     */
+    // Calculates speed of vehicle by looking ahead into its project path by @VEHICLES_IN_SPEED amount
     private double getSpeed(){
         int numVehicles=0;
         double totalSpeed = 0;
