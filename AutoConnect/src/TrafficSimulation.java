@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,15 +24,11 @@ public class TrafficSimulation {
             "trafficData/vehicleData9.txt","trafficData/vehicleData10.txt"));
 
     public static void main(String[] args){
-
         initializeTraffic();
-
-        System.out.println("Yeah, works so far!");
-
+        System.out.println("Simulation finished!");
     }
 
     private static void initializeTraffic(){
-
         //create vehicles
         try{
             //ArrayList<String> createdVehicleData = readTrafficData(rawTrafficData);
@@ -100,16 +97,15 @@ public class TrafficSimulation {
         Collections.sort(vehicleCreationTime);
     }
 
-    /*
-    private static void generateSystemVehicles(){
 
+    private static void generateSystemVehicles(){
         //activate system vehicles by creation time
         for(int i=0; i<vehicleCreationTime.size()-1; i++){
             Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(i));
             Thread systemCar = new Thread(activeCar);
             systemCar.start();
 
-            Float waitTilNextCarInMilliseconds = (vehicleCreationTime.get(i+1)-vehicleCreationTime.get(i))*1000;
+            Float waitTilNextCarInMilliseconds = round((vehicleCreationTime.get(i+1)-vehicleCreationTime.get(i)))*1000;
             try{
                 Thread.sleep(waitTilNextCarInMilliseconds.longValue());
             }catch (InterruptedException e){
@@ -121,13 +117,12 @@ public class TrafficSimulation {
         Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(parsedVehicles.size()-1));
         Thread systemCar = new Thread(activeCar);
         systemCar.start();
-    }*/
-
-    private static void generateSystemVehicles(){
-        //create first car
-        Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(0));
-        Thread systemCar = new Thread(activeCar);
-        systemCar.start();
     }
 
+    //rounds float to one decimal place
+    private static Float round(Float f){
+        BigDecimal bd = new BigDecimal(Float.toString(f));
+        bd = bd.setScale(1, BigDecimal.ROUND_HALF_UP);
+        return bd.floatValue();
+    }
 }
