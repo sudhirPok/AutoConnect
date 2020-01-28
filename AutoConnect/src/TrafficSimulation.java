@@ -7,12 +7,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 
 public class TrafficSimulation {
     private static final String rawTrafficData = "trafficData/kathmanduTraffic.txt";
-    private static final int numVehicles = 10;
+    private static final int NUM_VEHICLES = 10;
 
-    private static ArrayList<Vehicle> vehicleArrayList = new ArrayList();
+    private static HashMap<Float, Vehicle> parsedVehicles = new HashMap<>();
+    private static ArrayList<Float> vehicleCreationTime = new ArrayList<>();
 
     private static ArrayList<String> testingVehiclePath = new ArrayList<>(
             Arrays.asList("trafficData/vehicleData1.txt","trafficData/vehicleData2.txt","trafficData/vehicleData3.txt","trafficData/vehicleData4.txt",
@@ -34,9 +37,10 @@ public class TrafficSimulation {
             //ArrayList<String> createdVehicleData = readTrafficData(rawTrafficData);
             ArrayList<String> createdVehicleData = testingVehiclePath;
             createVehicles(createdVehicleData);
+            generateSystemVehicles();
         }catch(IOException e){
             System.out.println(e.getMessage());
-        }catch(ParseVehicleDataException e){
+        }catch(AutoConnectException e){
             System.out.println(e.getMessage());
         }
     }
@@ -54,12 +58,12 @@ public class TrafficSimulation {
         FileWriter writer = null;
 
         int countVehicles = 0;
-        while((row = csvReader.readLine()) != null && countVehicles<=numVehicles){
+        while((row = csvReader.readLine()) != null && countVehicles<=NUM_VEHICLES){
             String[] data = row.split(",");
 
             //if we encounter a car id, stop writing to current file & write to new file.
             //note, this skips the current line
-            if (!data[0].isEmpty() && countVehicles!=numVehicles){
+            if (!data[0].isEmpty() && countVehicles!=NUM_VEHICLES){
                 if(writer!=null){
                     writer.flush();
                     writer.close();
@@ -81,16 +85,49 @@ public class TrafficSimulation {
         return vehicleData;
     }
 
-    private static void createVehicles(ArrayList<String> vehicleCSVs) throws IOException, ParseVehicleDataException{
+    private static void createVehicles(ArrayList<String> vehicleCSVs) throws IOException, AutoConnectException {
         for(String csvFile: vehicleCSVs){
             Vehicle vehicle = new Vehicle(csvFile);
-            vehicleArrayList.add(vehicle);
+            parsedVehicles.put(vehicle.getStartingTime(), vehicle);
+            vehicleCreationTime.add(vehicle.getStartingTime());
         }
 
-        if(vehicleArrayList.size()!=numVehicles){
-            throw new ParseVehicleDataException(String.format("Raw traffic data was parsed, but not into %s individual vehicles!", numVehicles));
+        if(!(parsedVehicles.size()==NUM_VEHICLES && vehicleCreationTime.size()==NUM_VEHICLES)){
+            throw new AutoConnectException(String.format("Raw traffic data was parsed, but not into %s individual vehicles!", NUM_VEHICLES));
         }
+
+        //sort vehicleCreationTime in ascending order
+        Collections.sort(vehicleCreationTime);
     }
 
+    /*
+    private static void generateSystemVehicles(){
+
+        //activate system vehicles by creation time
+        for(int i=0; i<vehicleCreationTime.size()-1; i++){
+            Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(i));
+            Thread systemCar = new Thread(activeCar);
+            systemCar.start();
+
+            Float waitTilNextCarInMilliseconds = (vehicleCreationTime.get(i+1)-vehicleCreationTime.get(i))*1000;
+            try{
+                Thread.sleep(waitTilNextCarInMilliseconds.longValue());
+            }catch (InterruptedException e){
+                System.out.println("Simulation encountered error in waiting for upcoming car to active! Critical error!");
+            }
+        }
+
+        //create last car
+        Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(parsedVehicles.size()-1));
+        Thread systemCar = new Thread(activeCar);
+        systemCar.start();
+    }*/
+
+    private static void generateSystemVehicles(){
+        //create first car
+        Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(0));
+        Thread systemCar = new Thread(activeCar);
+        systemCar.start();
+    }
 
 }
