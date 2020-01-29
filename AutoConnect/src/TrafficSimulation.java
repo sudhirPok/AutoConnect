@@ -58,8 +58,12 @@ public class TrafficSimulation {
         while((row = csvReader.readLine()) != null && countVehicles<=NUM_VEHICLES){
             String[] data = row.split(",");
 
-            //if we encounter a car id, stop writing to current file & write to new file.
-            //note, this skips the current line
+
+            //if we encounter a car id and we've made enough cars, simply exit
+            if (!data[0].isEmpty() && countVehicles==NUM_VEHICLES) {
+                break;
+            }
+            //if we encounter a car id and we haven't yet made enough, stop writing to current file & write to new file
             if (!data[0].isEmpty() && countVehicles!=NUM_VEHICLES){
                 if(writer!=null){
                     writer.flush();
@@ -71,7 +75,9 @@ public class TrafficSimulation {
                 Files.createFile(vehicleFilePath);
                 vehicleData.add(filePath);
                 writer = new FileWriter(filePath);
-            }else{
+            }
+            //continue writing to current file
+            else{
                 writer.write(row + "\n");
             }
         }
@@ -99,6 +105,8 @@ public class TrafficSimulation {
 
 
     private static void generateSystemVehicles(){
+        System.out.println("Simulation should have " +vehicleCreationTime.size() + " cars running: " );
+
         //activate system vehicles by creation time
         for(int i=0; i<vehicleCreationTime.size()-1; i++){
             Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(i));
@@ -107,9 +115,10 @@ public class TrafficSimulation {
 
             Float waitTilNextCarInMilliseconds = round((vehicleCreationTime.get(i+1)-vehicleCreationTime.get(i)))*1000;
             try{
+                System.out.println("Simulation is waiting " + waitTilNextCarInMilliseconds/1000 + "s for next car!\n");
                 Thread.sleep(waitTilNextCarInMilliseconds.longValue());
             }catch (InterruptedException e){
-                System.out.println("Simulation encountered error in waiting for upcoming car to active! Critical error!");
+                System.out.println("Simulation encountered CRITICAL error in waiting for upcoming car to active!");
             }
         }
 

@@ -127,7 +127,7 @@ public class Vehicle implements Runnable{
                 }
             }
         }catch (AutoConnectException e){
-            System.out.println("After " + alphaVehicleCounter + " loops, Vehicle " + this.AutoConnectId + "exits: " + e.getMessage() + "\n");
+            System.out.println("After " + alphaVehicleCounter + " loops, Vehicle " + this.AutoConnectId + " exits --> " + e.getMessage() + "\n");
         }
     }
 
