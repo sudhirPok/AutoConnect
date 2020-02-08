@@ -37,6 +37,7 @@ public class Vehicle implements Runnable{
     private int AutoConnectId ;
     private Float updateInterval;
     private List<Integer> betaCandidates;
+    private List<String> lifetimeAlphaConnections;
 
 
     public Vehicle(String file) throws IOException, AutoConnectException {
@@ -65,7 +66,7 @@ public class Vehicle implements Runnable{
         return lastPoint;
     }
 
-    public Coordinate getStartingCoordinate(){
+    private Coordinate getStartingCoordinate(){
         Collection<Coordinate> coordinates = futureRoute.values();
         return coordinates.iterator().next();
     }
@@ -73,6 +74,10 @@ public class Vehicle implements Runnable{
     public Float getStartingTime(){
         Collection<Float> times = futureRoute.keySet();
         return times.iterator().next();
+    }
+
+    public List<String> getLifetimeAlphaConnections() {
+        return lifetimeAlphaConnections;
     }
 
     // Calculates speed of vehicle by looking (VEHICLES_IN_SPEED-1) future positions ahead (ie. includes current position)
@@ -134,7 +139,7 @@ public class Vehicle implements Runnable{
 
     //initialize vehicle's connection with server. Successful request will receive an AutoConnect-registered ID
     //and an updateInterval with which to wait til updating its position.
-    public void initializeConnection() throws AutoConnectException{
+    private void initializeConnection() throws AutoConnectException{
         try {
             //set parameters
             String VIN = this.ID.toString();
@@ -164,7 +169,7 @@ public class Vehicle implements Runnable{
 
             //execute POST request
             HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpPost request = new HttpPost("http://192.168.0.104:4000/initconnect");
+            HttpPost request = new HttpPost("http://192.168.0.104:4001/initconnect");
             request.setEntity(entity);
             HttpResponse response = httpClient.execute(request);
             int statusCode = response.getStatusLine().getStatusCode();
@@ -181,13 +186,16 @@ public class Vehicle implements Runnable{
             //Obtain AutoConnectId and updateInterval
             this.AutoConnectId = (int) responseJson.get("AutoId");
             this.updateInterval = ((Double) responseJson.get("TimeCheck")).floatValue();
+
+            //Prepare lifetime Alpha request storage
+            this.lifetimeAlphaConnections = new ArrayList<>();
         } catch (IOException e){
             throw new AutoConnectException("VIN# " + this.ID.toString() + "was unable to attempt an initialization connection with server!");
         }
     }
 
     //update vehicle's current position with server. Successful request will receive next updateInterval by which to wait.
-    public void updatePositionToServer() throws AutoConnectException{
+    private void updatePositionToServer() throws AutoConnectException{
         try {
             //wait certain intervals
             Thread.currentThread().sleep((long) (updateInterval * 1));
@@ -228,7 +236,7 @@ public class Vehicle implements Runnable{
 
             //Execute PATCH request
             HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpPatch request = new HttpPatch("http://192.168.0.104:4000/updateconnect");
+            HttpPatch request = new HttpPatch("http://192.168.0.104:4001/updateconnect");
             request.setEntity(entity);
             HttpResponse response = httpClient.execute(request);
             int statusCode = response.getStatusLine().getStatusCode();
@@ -259,7 +267,7 @@ public class Vehicle implements Runnable{
 
     }
 
-    public void getBetaVehicles() throws AutoConnectException{
+    private void getBetaVehicles() throws AutoConnectException{
         try {
             //check if vehicle is no longer in simulation
             if(isVehicleLifeOver()){
@@ -293,7 +301,7 @@ public class Vehicle implements Runnable{
 
             //Execute POST request
             HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpPost request = new HttpPost("http://192.168.0.104:4000/getbetas");
+            HttpPost request = new HttpPost("http://192.168.0.104:4001/getbetas");
             request.setEntity(entity);
             HttpResponse response = httpClient.execute(request);
             int statusCode = response.getStatusLine().getStatusCode();
@@ -316,6 +324,10 @@ public class Vehicle implements Runnable{
             //Obtain beta candidates
             JSONArray priorityMatrix = (JSONArray) responseJson.get("PriorityMatrix");
             this.betaCandidates = (List<Integer>) (List<?>) priorityMatrix.toList();
+
+            //Save Alpha response
+            String alphaResponseOutput = saveAlphaResponse();
+            this.lifetimeAlphaConnections.add(alphaResponseOutput);
         } catch (InterruptedException e){
             throw new AutoConnectException("Vehicle " + this.AutoConnectId + " has exited the simulation!");
         } catch (IOException e) {
@@ -323,10 +335,25 @@ public class Vehicle implements Runnable{
         }
     }
 
+    private String saveAlphaResponse(){
+        String connectionsId = lifetimeAlphaConnections.size() == 0 ? this.ID.toString() : "";
+        String vehicleId = lifetimeAlphaConnections.size() == 0 ? String.valueOf(this.AutoConnectId) : "";
+        String timeStamp = getStartingTime().toString();
+        String openConnection = "";
+        if(lifetimeAlphaConnections.size() > 0){
+            StringJoiner joiner = new StringJoiner("'");
+            for(Integer i: this.betaCandidates){
+                joiner.add(i.toString());
+            }
+            openConnection = joiner.toString();
+        }
+
+        return connectionsId + "," + vehicleId + "," + timeStamp + "," + openConnection + "\n";
+    }
 
     //As very first position entry of 'futureRoute' is at current moment, we must prune the collection of past positions
     private void moveVehicleForward() throws InterruptedException{
-        Float updatedCurrentTime = round(this.getStartingTime() + updateInterval);
+        Float updatedCurrentTime = round(getStartingTime() + updateInterval);
 
         //if vehicle doesn't exist at current moment (ie. no longer a running vehicle), simply exit simulation
         if(!futureRoute.containsKey(updatedCurrentTime)){
