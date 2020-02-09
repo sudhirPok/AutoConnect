@@ -26,7 +26,7 @@ public class Vehicle implements Runnable{
     private static final int VEHICLES_IN_SPEED = 3;
     private static final Double CONNECTION_RADIUS_CAR = 100.0;
     private static final int BETA_BOUND = 3;
-    private static final int BETA_REQUEST_INTERVALS = 3; //After how many position updates should vehicle ask for betas?
+    private static final int BETA_REQUEST_INTERVALS = 1; //After how many position updates should vehicle ask for betas?
 
     //design of the vehicle class is such that the very first entry of the collection futureRoute ALWAYS
     //represents its CURRENT positional data (ie. must constantly prune this collection to remove all previous
@@ -186,6 +186,7 @@ public class Vehicle implements Runnable{
             //Obtain AutoConnectId and updateInterval
             this.AutoConnectId = (int) responseJson.get("AutoId");
             this.updateInterval = ((Double) responseJson.get("TimeCheck")).floatValue();
+            this.updateInterval = 1f;
 
             //Prepare lifetime Alpha request storage
             this.lifetimeAlphaConnections = new ArrayList<>();

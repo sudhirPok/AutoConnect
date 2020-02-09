@@ -14,7 +14,8 @@ public class TrafficSimulation {
     private static final String OUTPUT_COLUMN_HEADERS = "Connections ID, Vehicle ID, Time Stamp, Current Open Connections";
 
 
-    private static final int NUM_VEHICLES = 10;
+    private static final int NUM_VEHICLES = 10; //total vehicles in simulation
+    private static final int ACTIVE_VEHICLES = 6; //vehicles in simulation (just for testing, really)
 
     private static HashMap<Float, Vehicle> parsedVehicles = new HashMap<>();
     private static ArrayList<Float> vehicleCreationTime = new ArrayList<>();
@@ -98,7 +99,8 @@ public class TrafficSimulation {
     }
 
     private static void createVehicles(ArrayList<String> vehicleCSVs) throws IOException, AutoConnectException {
-        for(String csvFile: vehicleCSVs){
+        for(int i=0; i<NUM_VEHICLES; i++){
+            String csvFile = vehicleCSVs.get(i);
             Vehicle vehicle = new Vehicle(csvFile);
             parsedVehicles.put(vehicle.getStartingTime(), vehicle);
             vehicleCreationTime.add(vehicle.getStartingTime());
@@ -114,10 +116,11 @@ public class TrafficSimulation {
 
 
     private static void generateSimulationVehicles(){
-        System.out.println("Simulation should have " +vehicleCreationTime.size() + " cars running!\n" );
+        System.out.println("Simulation should have " +ACTIVE_VEHICLES + " cars running!\n" );
 
         //activate system vehicles by creation time
-        for(int i=0; i<vehicleCreationTime.size()-1; i++){
+
+        for(int i=0; i<ACTIVE_VEHICLES-1; i++){
             Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(i));
             Thread systemCar = new Thread(activeCar);
             vehicleThreads.add(systemCar);
@@ -133,7 +136,7 @@ public class TrafficSimulation {
         }
 
         //create last car
-        Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(parsedVehicles.size()-1));
+        Vehicle activeCar = parsedVehicles.get(vehicleCreationTime.get(ACTIVE_VEHICLES-1));
         Thread systemCar = new Thread(activeCar);
         vehicleThreads.add(systemCar);
         systemCar.start();
@@ -145,14 +148,12 @@ public class TrafficSimulation {
         FileWriter writer = new FileWriter(OUTPUT_TRAFFIC_DATA);
         writer.write(OUTPUT_COLUMN_HEADERS + "\n");
 
-        //For each vehicle in simulation, write its entire lifecycle of Alpha requests
-        Iterator<Vehicle> vehicleIterator = parsedVehicles.values().iterator();
-        while(vehicleIterator.hasNext()){
-            Vehicle vehicle = vehicleIterator.next();
+        for(int i=0; i<ACTIVE_VEHICLES; i++){
+            Vehicle vehicle = parsedVehicles.get(vehicleCreationTime.get(i));
 
             List<String> alphaConnections = vehicle.getLifetimeAlphaConnections();
-            for(String s: alphaConnections){
-                writer.write(s);
+            for(int j=0; j<alphaConnections.size(); j++){
+                writer.write(alphaConnections.get(j));
             }
         }
 
