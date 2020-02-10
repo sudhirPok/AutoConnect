@@ -19,6 +19,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 
@@ -28,20 +29,21 @@ public class Vehicle implements Runnable{
     private static final int BETA_BOUND = 3;
     private static final int BETA_REQUEST_INTERVALS = 1; //After how many position updates should vehicle ask for betas?
 
-    //design of the vehicle class is such that the very first entry of the collection futureRoute ALWAYS
+    //design of vehicle class is such that the very first entry of the collection futureRoute ALWAYS
     //represents its CURRENT positional data (ie. must constantly prune this collection to remove all previous
     //entries with timestamps in the past)
     private LinkedHashMap<Float, Coordinate> futureRoute = null;
-    private final UUID ID;
+    private final String ID;
     private final Coordinate destination;
     private int AutoConnectId ;
     private Float updateInterval;
     private List<Integer> betaCandidates;
     private List<String> lifetimeAlphaConnections;
 
-
     public Vehicle(String file) throws IOException, AutoConnectException {
-        ID = UUID.randomUUID();
+        //Given filepath is "trafficData/vehicleData1.txt", name is "vehicleData1" and ID is "1"
+        String vehicleName = file.substring(file.lastIndexOf("/")+1, file.length()-4);
+        ID = vehicleName.substring(11);
         futureRoute = new LinkedHashMap<>();
         destination = parsePointData(file);
     }
@@ -87,6 +89,7 @@ public class Vehicle implements Runnable{
         Coordinate previousPoint = null;
 
         Iterator<Float> times = futureRoute.keySet().iterator();
+        if(futureRoute.size()<VEHICLES_IN_SPEED) return 0d;
         while(numVehicles<VEHICLES_IN_SPEED){
             float time = times.next();
 
@@ -142,7 +145,7 @@ public class Vehicle implements Runnable{
     private void initializeConnection() throws AutoConnectException{
         try {
             //set parameters
-            String VIN = this.ID.toString();
+            String VIN = this.ID;
             String GPX = "dummyGPX";
             Double PositionX = getStartingCoordinate().getLatitude();
             Double PositionY = getStartingCoordinate().getLongitude();
@@ -176,7 +179,7 @@ public class Vehicle implements Runnable{
 
             //Check REST call went through
             if (statusCode != HttpStatus.SC_CREATED) {
-                throw new AutoConnectException("VIN# " + this.ID.toString() + " failed to successively initialize connection with server!");
+                throw new AutoConnectException("VIN# " + this.ID + " failed to successively initialize connection with server!");
             }
 
             //Obtain response data
@@ -191,7 +194,10 @@ public class Vehicle implements Runnable{
             //Prepare lifetime Alpha request storage
             this.lifetimeAlphaConnections = new ArrayList<>();
         } catch (IOException e){
-            throw new AutoConnectException("VIN# " + this.ID.toString() + "was unable to attempt an initialization connection with server!");
+            throw new AutoConnectException("VIN# " + this.ID + "was unable to attempt an initialization connection with server!");
+        } catch (JSONException e){
+            System.out.println("JSON Exception was: " + e.getMessage());
+            System.out.println("Value of direction is: " + getDirection());
         }
     }
 
@@ -219,6 +225,7 @@ public class Vehicle implements Runnable{
             Double Speed = getSpeed();
             Double Direction = getDirection();
             String Time = Clock.systemUTC().instant().toString();
+            int Terminated = 0;
 
             //JSONify parameters, and build payload
             JSONObject myJson = new JSONObject();
@@ -231,6 +238,7 @@ public class Vehicle implements Runnable{
             myJson.put("Speed", Speed);
             myJson.put("Direction", Direction);
             myJson.put("Time", Time);
+            myJson.put("Terminated", Terminated);
             HttpEntity entity = EntityBuilder.create()
                     .setText(myJson.toString())
                     .setContentType(ContentType.create("application/json", StandardCharsets.UTF_8)).build();
@@ -337,7 +345,7 @@ public class Vehicle implements Runnable{
     }
 
     private String saveAlphaResponse(){
-        String connectionsId = lifetimeAlphaConnections.size() == 0 ? this.ID.toString() : "";
+        String connectionsId = lifetimeAlphaConnections.size() == 0 ? this.ID : "";
         String vehicleId = lifetimeAlphaConnections.size() == 0 ? String.valueOf(this.AutoConnectId) : "";
         String timeStamp = getStartingTime().toString();
         String openConnection = "";
@@ -378,8 +386,60 @@ public class Vehicle implements Runnable{
     }
 
     private void killVehicle() throws InterruptedException{
+        try{
+            updateServerVehicleKilled();
+        }catch (AutoConnectException e){
+            System.out.println("Vehicle " + this.AutoConnectId + " could not kill itself!");
+        }
         Thread.currentThread().interrupt();
         throw new InterruptedException();
+    }
+
+    private void updateServerVehicleKilled() throws AutoConnectException{
+        try{
+            //set parameters
+            int AutoId = this.AutoConnectId;
+            String GPX = "dummyGPX";
+            Double PositionX = 0.d;
+            Double PositionY = 0.d;
+            Double DestinationX = 0.d;
+            Double DestinationY = 0.d;
+            Double Speed = 0.d;
+            Double Direction = 0.d;
+            String Time = "";
+            int Terminated = 1;
+
+            //JSONify parameters, and build payload
+            JSONObject myJson = new JSONObject();
+            myJson.put("AutoId", AutoId);
+            myJson.put("RouteXML", GPX);
+            myJson.put("PositionX", PositionX);
+            myJson.put("PositionY", PositionY);
+            myJson.put("DestinationX", DestinationX);
+            myJson.put("DestinationY", DestinationY);
+            myJson.put("Speed", Speed);
+            myJson.put("Direction", Direction);
+            myJson.put("Time", Time);
+            myJson.put("Terminated", Terminated);
+            HttpEntity entity = EntityBuilder.create()
+                    .setText(myJson.toString())
+                    .setContentType(ContentType.create("application/json", StandardCharsets.UTF_8)).build();
+
+            //Execute PATCH request
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            HttpPatch request = new HttpPatch("http://192.168.0.104:4001/updateconnect");
+            request.setEntity(entity);
+            HttpResponse response = httpClient.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            //Check REST call went through
+            if(statusCode != HttpStatus.SC_OK) {
+                throw new AutoConnectException("Vehicle " + this.AutoConnectId + " failed to successively update its death with server!");
+            }
+        }catch(IOException e){
+            throw new AutoConnectException("Vehicle " + this.AutoConnectId + " failed to successively update its death with server!");
+        }
+
     }
 
     //rounds float to one decimal place

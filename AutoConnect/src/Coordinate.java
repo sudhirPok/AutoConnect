@@ -11,6 +11,15 @@ public class Coordinate {
         longitude = y;
     }
 
+    public boolean equals(Object o){
+        if(o == this) return true;
+        if (!(o instanceof Coordinate)) return false;
+
+        Coordinate c = (Coordinate) o;
+        return Double.compare(this.latitude, c.latitude)==0
+                && Double.compare(this.longitude, c.longitude)==0;
+    }
+
     public double getLatitude(){
         return latitude;
     }
@@ -35,11 +44,17 @@ public class Coordinate {
 
     //Returns angle of vector between current and target coordinate in degrees
     public double getDirection(Coordinate target){
+        if(this.equals(target)) return 0;
+
         //since angle is simply a ratio measurement, no need to convert to kilometres
         //additionally, we MUST keep the original positive/negative values of x- and y-components
         double xComponent = target.latitude - this.latitude;
         double yComponent = target.longitude - this.longitude;
-        return Math.toDegrees(Math.atan(yComponent/xComponent));
+        double angle = Math.toDegrees(Math.atan(yComponent/xComponent));
+        if (angle < 0){
+            angle += 360;
+        }
+        return angle;
     }
 
 }
