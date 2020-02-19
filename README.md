@@ -6,7 +6,7 @@ Essentially, vehicles on AutoConnect act likes nodes on a network. When a vehicl
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-*This repository hosts the source code for the actual simulation: a virtual run of vehicles around a specific region of Kingston, Ontario, constantly requesting vehicles to connect to and appropriately adjusting their trajectories and speed. The source code for the central server and the proprietary connection algorithm are hosted in another repository, as are the visuals of the simulation. This 4th-year Computer Engineering capstone project was presented and **won 3rd place at Queen's University**, as voted by fellow Electrical and Computer Engineering students.*
+*This repository hosts the source code for the actual simulation: a virtual run of vehicles around a specific region of Kingston, Ontario, constantly requesting vehicles to connect to and appropriately adjusting their trajectories and speed. The source code for the central server and the proprietary connection algorithm, as well as the visuals of the simulation, are hosted in another repository. This 4th-year Computer Engineering capstone project was presented and **won 3rd place at Queen's University (2020)**, as voted by fellow Electrical and Computer Engineering students.*
 
 AutoConnect founders: Sudhir Pokhrel, John Bowden, Drew Harshaw
 
